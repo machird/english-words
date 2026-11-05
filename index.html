@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="ja" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>高校入試英単語 速読マスター</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+            },
+            accent: {
+              500: '#3b82f6',
+              600: '#2563eb',
+            }
+          },
+          animation: {
+            'swipe-left': 'swipeLeft 0.28s ease-out forwards',
+            'swipe-right': 'swipeRight 0.28s ease-out forwards',
+          },
+          keyframes: {
+            swipeLeft: {
+              '0%': { transform: 'translateX(0) rotate(0deg)', opacity: '1' },
+              '100%': { transform: 'translateX(-120%) rotate(-18deg)', opacity: '0' },
+            },
+            swipeRight: {
+              '0%': { transform: 'translateX(0) rotate(0deg)', opacity: '1' },
+              '100%': { transform: 'translateX(120%) rotate(18deg)', opacity: '0' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      box-sizing: border-box;
+    }
+    input, textarea {
+      user-select: text;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .touch-card {
+      touch-action: none;
+      transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+      will-change: transform;
+    }
+  </style>
+</head>
+<body class="h-full bg-slate-900 text-slate-100 font-sans antialiased flex flex-col justify-between selection:bg-brand-500 selection:text-white">
+
+  <!-- ヘッダー -->
+  <header class="w-full max-w-md mx-auto px-4 pt-4 pb-2 flex items-center justify-between border-b border-slate-800">
+    <div class="flex items-center space-x-2">
+      <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-500 to-accent-500 flex items-center justify-center shadow-lg shadow-brand-500/20 text-white font-black text-sm">
+        30
+      </div>
+      <div>
+        <h1 class="text-xs font-bold tracking-tight text-white flex items-center gap-1.5">
+          <span>高校入試英単語 速読マスター</span>
+          <span id="countdownBadge" class="text-[10px] font-semibold bg-rose-500/20 text-rose-400 border border-rose-500/30 px-1.5 py-0.5 rounded-full">残り30日</span>
+        </h1>
+        <p class="text-[10px] text-slate-400">1秒反射テスト & 高速周回</p>
+      </div>
+    </div>
+
+    <div class="flex items-center space-x-1.5">
+      <button id="toggleAudioBtn" class="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition" title="音声ミュート切替">
+        <i id="audioIcon" class="ph-bold ph-speaker-high text-lg text-brand-400"></i>
+      </button>
+      <button id="toggleAutoNextBtn" class="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition text-[11px] font-bold flex items-center gap-1" title="超高速自動めくり">
+        <i class="ph-bold ph-lightning text-amber-400"></i>
+        <span id="speedModeLabel" class="text-[10px] text-slate-400">速読OFF</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- メインエリア -->
+  <main class="w-full max-w-md mx-auto flex-1 flex flex-col px-4 py-2 overflow-hidden relative">
+
+    <!-- VIEW 1: カード周回 -->
+    <section id="viewCard" class="flex-1 flex flex-col justify-between">
+      
+      <div class="flex items-center justify-between text-xs py-1.5 px-2 bg-slate-800/60 rounded-xl backdrop-blur-sm border border-slate-700/50 mb-2">
+        <div class="flex items-center gap-2">
+          <span class="text-slate-400">進捗:</span>
+          <span id="cardProgressText" class="font-bold text-white font-mono">1 / 0</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="flex items-center gap-1 text-emerald-400 font-semibold font-mono" title="覚えた">
+            <i class="ph-bold ph-check"></i> <span id="sessionKnownCount">0</span>
+          </span>
+          <span class="flex items-center gap-1 text-rose-400 font-semibold font-mono" title="まだ">
+            <i class="ph-bold ph-x"></i> <span id="sessionUnsureCount">0</span>
+          </span>
+          <button id="filterModeBadge" class="text-[10px] bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-0.5 rounded-md flex items-center gap-1">
+            <span id="filterLabel">すべて</span>
+            <i class="ph-bold ph-caret-down text-[8px]"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="flex-1 flex flex-col justify-center items-center relative py-2 min-h-[300px]">
+        <div id="flashCard" class="touch-card w-full h-full max-h-[370px] bg-gradient-to-b from-slate-800 to-slate-850 rounded-3xl p-6 shadow-2xl border border-slate-700/70 flex flex-col justify-between relative cursor-pointer overflow-hidden">
+          
+          <div class="flex items-center justify-between w-full">
+            <div class="flex gap-1.5">
+              <span id="cardGrade" class="px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[11px] font-bold">最頻出</span>
+              <span id="cardCategory" class="px-2 py-0.5 rounded-md bg-slate-700/60 text-slate-300 text-[11px] font-medium">動詞</span>
+              <span id="weakBadge" class="hidden px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-400 border border-rose-500/40 text-[10px] font-extrabold flex items-center gap-0.5">
+                <i class="ph-fill ph-fire text-rose-500"></i> 要復習
+              </span>
+            </div>
+            <button id="cardSpeakBtn" class="w-9 h-9 rounded-full bg-slate-700/70 text-slate-200 hover:text-brand-400 hover:bg-slate-600 flex items-center justify-center transition active:scale-95 shadow">
+              <i class="ph-bold ph-speaker-simple-high text-lg"></i>
+            </button>
+          </div>
+
+          <div class="flex-1 flex flex-col items-center justify-center text-center my-auto">
+            <h2 id="cardWord" class="text-3xl sm:text-4xl font-black tracking-tight text-white mb-2 font-mono">
+              -
+            </h2>
+            <div id="cardPhonetic" class="text-slate-400 text-xs font-mono tracking-wider mb-4">
+              -
+            </div>
+
+            <div id="meaningContainer" class="min-h-[64px] flex flex-col items-center justify-center w-full transition-all duration-150">
+              <div id="meaningPlaceholder" class="text-slate-500 text-xs flex items-center gap-1.5 py-2 px-3 rounded-full bg-slate-850 border border-slate-700/60">
+                <i class="ph-fill ph-hand-tap text-brand-400"></i> タップして意味を表示
+              </div>
+              <div id="meaningContent" class="hidden flex flex-col items-center">
+                <span id="cardMeaning" class="text-xl sm:text-2xl font-bold text-amber-300 tracking-tight text-center">-</span>
+                <span id="cardExample" class="text-xs text-slate-400 mt-2 italic px-3 text-center">-</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="w-full flex items-center justify-between text-[11px] font-medium text-slate-500 pt-3 border-t border-slate-700/40">
+            <span class="flex items-center gap-1 text-rose-400/80"><i class="ph-bold ph-arrow-left"></i> 左スワイプ: まだ</span>
+            <span class="flex items-center gap-1 text-emerald-400/80">右スワイプ: 覚えた <i class="ph-bold ph-arrow-right"></i></span>
+          </div>
+
+          <div id="leftIndicator" class="absolute inset-0 bg-rose-600/20 border-4 border-rose-500 rounded-3xl pointer-events-none opacity-0 flex items-center justify-start pl-8 transition-opacity duration-100">
+            <span class="text-2xl font-black text-rose-400 bg-rose-950/80 px-4 py-2 rounded-2xl border border-rose-500">まだ</span>
+          </div>
+          <div id="rightIndicator" class="absolute inset-0 bg-emerald-600/20 border-4 border-emerald-500 rounded-3xl pointer-events-none opacity-0 flex items-center justify-end pr-8 transition-opacity duration-100">
+            <span class="text-2xl font-black text-emerald-400 bg-emerald-950/80 px-4 py-2 rounded-2xl border border-emerald-500">覚えた！</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 pt-2 pb-1">
+        <button id="btnNotYet" class="group relative flex items-center justify-center gap-2 py-4 px-4 bg-gradient-to-b from-rose-950/70 to-rose-900/60 hover:to-rose-800/70 border border-rose-500/50 rounded-2xl shadow-lg shadow-rose-950/40 text-rose-300 active:scale-95 transition">
+          <i class="ph-bold ph-arrow-u-down-left text-xl group-hover:-translate-x-1 transition-transform"></i>
+          <div class="text-left">
+            <div class="text-[10px] text-rose-400 font-bold uppercase tracking-wider">0.5秒迷ったら</div>
+            <div class="text-base font-black tracking-wide text-white">まだ / 復習</div>
+          </div>
+        </button>
+
+        <button id="btnRemembered" class="group relative flex items-center justify-center gap-2 py-4 px-4 bg-gradient-to-b from-emerald-950/70 to-emerald-900/60 hover:to-emerald-800/70 border border-emerald-500/50 rounded-2xl shadow-lg shadow-emerald-950/40 text-emerald-300 active:scale-95 transition">
+          <div class="text-right">
+            <div class="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">即座に出た</div>
+            <div class="text-base font-black tracking-wide text-white">覚えた！</div>
+          </div>
+          <i class="ph-bold ph-check-fat text-xl group-hover:scale-110 transition-transform"></i>
+        </button>
+      </div>
+    </section>
+
+    <!-- VIEW 2: 進捗ダッシュボード -->
+    <section id="viewDashboard" class="hidden flex-1 overflow-y-auto no-scrollbar pb-6 space-y-4">
+      <div class="p-4 rounded-2xl bg-gradient-to-r from-indigo-900/60 to-purple-900/60 border border-indigo-500/40 relative overflow-hidden">
+        <div class="flex justify-between items-start mb-2">
+          <div>
+            <span class="text-[10px] font-bold text-indigo-300 uppercase tracking-widest">High School Exam Prep</span>
+            <h3 class="text-lg font-black text-white">公立高校入試 突破計画</h3>
+          </div>
+          <div class="text-right">
+            <div class="text-2xl font-black text-amber-400 font-mono" id="dashDaysLeft">30</div>
+            <span class="text-[10px] text-indigo-300">日 残り</span>
+          </div>
+        </div>
+        <div class="w-full bg-slate-800/80 rounded-full h-2.5 overflow-hidden mb-2">
+          <div id="dashDaysProgressBar" class="bg-gradient-to-r from-amber-400 to-brand-500 h-2.5 rounded-full transition-all duration-500" style="width: 3.3%;"></div>
+        </div>
+        <p class="text-[11px] text-slate-300 leading-relaxed">
+          長文読解の成否を分ける重要動詞・名詞を「0.5秒の反射速度」で反復します。
+        </p>
+      </div>
+
+      <div class="grid grid-cols-3 gap-2.5">
+        <div class="p-3 bg-slate-800/70 border border-slate-700 rounded-2xl text-center">
+          <div class="text-slate-400 text-[10px] font-medium mb-1">総収録数</div>
+          <div id="statTotalWords" class="text-xl font-black text-white font-mono">0</div>
+          <div class="text-[9px] text-slate-500">単語</div>
+        </div>
+        <div class="p-3 bg-slate-800/70 border border-slate-700 rounded-2xl text-center">
+          <div class="text-slate-400 text-[10px] font-medium mb-1">完全定着</div>
+          <div id="statMasteredWords" class="text-xl font-black text-emerald-400 font-mono">0</div>
+          <div class="text-[9px] text-emerald-500/80" id="statMasteredPercent">0%</div>
+        </div>
+        <div class="p-3 bg-slate-800/70 border border-slate-700 rounded-2xl text-center">
+          <div class="text-slate-400 text-[10px] font-medium mb-1">今日チェック数</div>
+          <div id="statTodayReviews" class="text-xl font-black text-amber-400 font-mono">0</div>
+          <div class="text-[9px] text-amber-500/80">周回</div>
+        </div>
+      </div>
+
+      <div class="p-4 bg-slate-800/80 border border-slate-700 rounded-2xl">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold">
+              <i class="ph-bold ph-warning"></i>
+            </div>
+            <div>
+              <h4 class="text-sm font-bold text-white">要復習・苦手リスト</h4>
+              <p class="text-[10px] text-slate-400">直近で「まだ」と仕分けた単語</p>
+            </div>
+          </div>
+          <span id="weakCountBadge" class="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-400">0語</span>
+        </div>
+        <button id="btnLaunchWeakStudy" class="w-full py-2.5 px-4 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 active:scale-98 transition shadow">
+          <i class="ph-bold ph-play"></i> 苦手な単語だけを超速周回する
+        </button>
+      </div>
+
+      <div class="p-3.5 bg-slate-800/50 border border-slate-700/80 rounded-2xl flex items-center justify-between">
+        <div class="text-xs">
+          <div class="font-bold text-slate-300">目標期限日の変更</div>
+          <div id="targetDateDisplay" class="text-[10px] text-slate-500">-</div>
+        </div>
+        <button id="btnSetTargetDate" class="text-xs px-3 py-1.5 bg-slate-700 text-slate-200 rounded-lg hover:bg-slate-600">
+          変更
+        </button>
+      </div>
+    </section>
+
+    <!-- VIEW 3: 単語一覧・追加 -->
+    <section id="viewList" class="hidden flex-1 flex flex-col overflow-hidden pb-4">
+      <div class="flex gap-2 mb-3 pt-1">
+        <div class="relative flex-1">
+          <i class="ph-bold ph-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-sm"></i>
+          <input id="searchInput" type="text" placeholder="単語または日本語を検索..." class="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500">
+        </div>
+        <button id="btnOpenAddModal" class="px-3 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold flex items-center gap-1 whitespace-nowrap active:scale-95 transition">
+          <i class="ph-bold ph-plus"></i> 追加
+        </button>
+      </div>
+
+      <div id="wordListContainer" class="flex-1 overflow-y-auto no-scrollbar space-y-2 pr-0.5"></div>
+    </section>
+  </main>
+
+  <!-- タブバー -->
+  <nav class="w-full max-w-md mx-auto border-t border-slate-800 bg-slate-900/95 backdrop-blur-md px-6 py-2 flex justify-around items-center z-20">
+    <button id="tabCard" class="tab-btn flex flex-col items-center gap-1 text-brand-400 transition">
+      <i class="ph-fill ph-cards text-2xl"></i>
+      <span class="text-[10px] font-bold">周回テスト</span>
+    </button>
+    <button id="tabDash" class="tab-btn flex flex-col items-center gap-1 text-slate-400 hover:text-slate-200 transition">
+      <i class="ph-bold ph-chart-donut text-2xl"></i>
+      <span class="text-[10px] font-bold">進捗・記録</span>
+    </button>
+    <button id="tabList" class="tab-btn flex flex-col items-center gap-1 text-slate-400 hover:text-slate-200 transition">
+      <i class="ph-bold ph-list-dashes text-2xl"></i>
+      <span class="text-[10px] font-bold">単語一覧・追加</span>
+    </button>
+  </nav>
+
+  <!-- モーダル各種 -->
+  <div id="filterModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="w-full max-w-md bg-slate-850 border border-slate-700 rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-700 mb-3">
+        <h3 class="font-bold text-sm text-white">周回対象の絞り込み</h3>
+        <button id="closeFilterModal" class="p-1 rounded-lg text-slate-400 hover:text-white">
+          <i class="ph-bold ph-x text-lg"></i>
+        </button>
+      </div>
+      <div class="space-y-2 text-xs">
+        <button data-filter="all" class="filter-opt-btn w-full p-3 rounded-xl bg-slate-800 text-left flex justify-between items-center text-white font-medium hover:bg-slate-750">
+          <span>全単語を周回</span>
+          <span class="font-mono text-slate-400" id="filterCountAll">0語</span>
+        </button>
+        <button data-filter="weak" class="filter-opt-btn w-full p-3 rounded-xl bg-slate-800 text-left flex justify-between items-center text-rose-300 font-medium hover:bg-slate-750">
+          <span class="flex items-center gap-1.5"><i class="ph-fill ph-fire text-rose-500"></i> 要復習（まだ）のみ</span>
+          <span class="font-mono text-rose-400" id="filterCountWeak">0語</span>
+        </button>
+        <button data-filter="verb" class="filter-opt-btn w-full p-3 rounded-xl bg-slate-800 text-left flex justify-between items-center text-slate-200 font-medium hover:bg-slate-750">
+          <span>超最頻出・文脈を握る動詞</span>
+          <span class="font-mono text-slate-400" id="filterCountVerb">0語</span>
+        </button>
+        <button data-filter="noun" class="filter-opt-btn w-full p-3 rounded-xl bg-slate-800 text-left flex justify-between items-center text-slate-200 font-medium hover:bg-slate-750">
+          <span>環境・社会テーマの名詞</span>
+          <span class="font-mono text-slate-400" id="filterCountNoun">0語</span>
+        </button>
+        <button data-filter="adj_adv" class="filter-opt-btn w-full p-3 rounded-xl bg-slate-800 text-left flex justify-between items-center text-slate-200 font-medium hover:bg-slate-750">
+          <span>論調・心情を見抜く形容詞/副詞</span>
+          <span class="font-mono text-slate-400" id="filterCountAdj">0語</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="addModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="w-full max-w-md bg-slate-850 border border-slate-700 rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl max-h-[90vh] overflow-y-auto no-scrollbar">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-700 mb-4">
+        <h3 class="font-bold text-sm text-white flex items-center gap-2">
+          <i class="ph-bold ph-plus-circle text-brand-400"></i> 単語の追加・一括登録
+        </h3>
+        <button id="closeAddModal" class="p-1 rounded-lg text-slate-400 hover:text-white">
+          <i class="ph-bold ph-x text-lg"></i>
+        </button>
+      </div>
+
+      <div class="flex rounded-xl bg-slate-800 p-1 mb-4 text-xs">
+        <button id="tabAddSingle" class="flex-1 py-1.5 rounded-lg bg-slate-700 text-white font-semibold">1語ずつ登録</button>
+        <button id="tabAddBatch" class="flex-1 py-1.5 rounded-lg text-slate-400 font-semibold hover:text-white">一括インポート</button>
+      </div>
+
+      <div id="formAddSingle" class="space-y-3">
+        <div>
+          <label class="block text-[11px] font-bold text-slate-400 mb-1">英単語 <span class="text-rose-400">*</span></label>
+          <input id="newWord" type="text" placeholder="例: improve" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500 font-mono">
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-400 mb-1">日本語の意味 <span class="text-rose-400">*</span></label>
+          <input id="newMeaning" type="text" placeholder="例: 〜を改善する、上達する" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-400 mb-1">区分</label>
+            <select id="newGrade" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
+              <option value="最頻出" selected>最頻出</option>
+              <option value="頻出">頻出</option>
+              <option value="基本">基本</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-400 mb-1">品詞</label>
+            <select id="newCategory" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
+              <option value="動詞">動詞</option>
+              <option value="名詞">名詞</option>
+              <option value="形容詞">形容詞</option>
+              <option value="副詞">副詞</option>
+              <option value="その他">その他</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-slate-400 mb-1">フレーズ / 例文（任意）</label>
+          <input id="newExample" type="text" placeholder="例: improve communication" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
+        </div>
+        <button id="btnSaveSingleWord" class="w-full py-2.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold mt-2 shadow active:scale-98 transition">
+          単語を追加する
+        </button>
+      </div>
+
+      <div id="formAddBatch" class="hidden space-y-3">
+        <p class="text-[11px] text-slate-400 leading-normal">
+          AIや表計算ソフトからコピーした「英単語, 日本語」を貼り付けて一括追加できます。<br>
+          形式：<span class="font-mono text-amber-300">apple, りんご</span> （1行に1単語）
+        </p>
+        <textarea id="batchInput" rows="6" placeholder="achieve, 〜を達成する&#10;protect, 〜を守る&#10;convenient, 便利な" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-xs text-white font-mono focus:outline-none focus:border-brand-500"></textarea>
+        <button id="btnSaveBatchWords" class="w-full py-2.5 bg-accent-600 hover:bg-accent-500 text-white rounded-xl text-xs font-bold shadow active:scale-98 transition">
+          まとめて登録する
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="dateModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="w-full max-w-xs bg-slate-850 border border-slate-700 rounded-2xl p-5 shadow-2xl">
+      <h3 class="font-bold text-sm text-white mb-2">目標期限日の設定</h3>
+      <p class="text-xs text-slate-400 mb-3">受験日やテストの日程を指定してください</p>
+      <input id="targetDateInput" type="date" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-xs text-white mb-4 focus:outline-none focus:border-brand-500">
+      <div class="flex gap-2">
+        <button id="closeDateModal" class="flex-1 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl text-xs font-bold">キャンセル</button>
+        <button id="saveDateModal" class="flex-1 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-slate-800 text-white border border-slate-700 px-4 py-2.5 rounded-full text-xs font-bold shadow-2xl pointer-events-none transition-all duration-300 opacity-0 -translate-y-2 flex items-center gap-2">
+    <i id="toastIcon" class="ph-bold ph-check text-brand-400 text-base"></i>
+    <span id="toastMsg">通知</span>
+  </div>
+
+  <script>
+    const RAW_VOCAB = [
+      { word: 'accept', meaning: '〜を受け入れる', cat: '動詞', ex: 'accept the invitation' },
+      { word: 'achieve', meaning: '〜を達成する、成し遂げる', cat: '動詞', ex: 'achieve my goal' },
+      { word: 'affect', meaning: '〜に影響を与える', cat: '動詞', ex: 'affect your health' },
+      { word: 'agree', meaning: '賛成する、同意する', cat: '動詞', ex: 'agree with you' },
+      { word: 'allow', meaning: '〜を許す、可能にする', cat: '動詞', ex: 'allow him to go' },
+      { word: 'appear', meaning: '現れる、〜のように見える', cat: '動詞', ex: 'appear on TV' },
+      { word: 'arrive', meaning: '到着する', cat: '動詞', ex: 'arrive at school' },
+      { word: 'attend', meaning: '〜に出席する、参加する', cat: '動詞', ex: 'attend the meeting' },
+      { word: 'believe', meaning: '〜を信じる、〜と思う', cat: '動詞', ex: 'I believe so.' },
+      { word: 'belong', meaning: '所属する', cat: '動詞', ex: 'belong to the club' },
+      { word: 'borrow', meaning: '〜を借りる', cat: '動詞', ex: 'borrow a book' },
+      { word: 'breathe', meaning: '呼吸する、息をする', cat: '動詞', ex: 'breathe fresh air' },
+      { word: 'build', meaning: '〜を建てる、築く', cat: '動詞', ex: 'build a bridge' },
+      { word: 'cause', meaning: '〜を引き起こす、原因となる', cat: '動詞', ex: 'cause an accident' },
+      { word: 'choose', meaning: '〜を選ぶ', cat: '動詞', ex: 'choose a present' },
+      { word: 'collect', meaning: '〜を集める', cat: '動詞', ex: 'collect stamps' },
+      { word: 'compare', meaning: '〜を比較する', cat: '動詞', ex: 'compare A with B' },
+      { word: 'connect', meaning: '〜をつなぐ、接続する', cat: '動詞', ex: 'connect to the internet' },
+      { word: 'consider', meaning: '〜をよく考える、考慮する', cat: '動詞', ex: 'consider the plan' },
+      { word: 'continue', meaning: '続く、〜を続ける', cat: '動詞', ex: 'continue studying' },
+      { word: 'create', meaning: '〜を創り出す、創造する', cat: '動詞', ex: 'create new jobs' },
+      { word: 'decide', meaning: '〜を決める、決心する', cat: '動詞', ex: 'decide to study abroad' },
+      { word: 'describe', meaning: '〜を描写する、説明する', cat: '動詞', ex: 'describe the picture' },
+      { word: 'destroy', meaning: '〜を破壊する', cat: '動詞', ex: 'destroy nature' },
+      { word: 'develop', meaning: '発達する、〜を開発する', cat: '動詞', ex: 'develop technology' },
+      { word: 'discover', meaning: '〜を発見する、気づく', cat: '動詞', ex: 'discover the truth' },
+      { word: 'encourage', meaning: '〜を励ます、勇気づける', cat: '動詞', ex: 'encourage each other' },
+      { word: 'explain', meaning: '〜を説明する', cat: '動詞', ex: 'explain the rules' },
+      { word: 'express', meaning: '〜を表現する', cat: '動詞', ex: 'express my feelings' },
+      { word: 'happen', meaning: '起こる、生じる', cat: '動詞', ex: 'What happened?' },
+      { word: 'improve', meaning: '〜を改善する、向上させる', cat: '動詞', ex: 'improve communication skills' },
+      { word: 'increase', meaning: '増える、〜を増やす', cat: '動詞', ex: 'increase by 20%' },
+      { word: 'introduce', meaning: '〜を紹介する、導入する', cat: '動詞', ex: 'introduce myself' },
+      { word: 'invent', meaning: '〜を発明する', cat: '動詞', ex: 'invent a new machine' },
+      { word: 'invite', meaning: '〜を招待する', cat: '動詞', ex: 'invite friends' },
+      { word: 'join', meaning: '〜に参加する、加わる', cat: '動詞', ex: 'join the event' },
+      { word: 'lead', meaning: '〜を導く、つながる', cat: '動詞', ex: 'lead to success' },
+      { word: 'lend', meaning: '〜を貸す', cat: '動詞', ex: 'lend me an eraser' },
+      { word: 'manage', meaning: '〜をどうにかやり遂げる、管理する', cat: '動詞', ex: 'manage time well' },
+      { word: 'notice', meaning: '〜に気づく', cat: '動詞', ex: 'notice a difference' },
+      { word: 'offer', meaning: '〜を提供する、申し出る', cat: '動詞', ex: 'offer help' },
+      { word: 'perform', meaning: '演じる、行う', cat: '動詞', ex: 'perform on stage' },
+      { word: 'pollute', meaning: '〜を汚染する', cat: '動詞', ex: 'pollute the ocean' },
+      { word: 'prepare', meaning: '準備する、〜を用意する', cat: '動詞', ex: 'prepare dinner' },
+      { word: 'prevent', meaning: '〜を防ぐ、妨げる', cat: '動詞', ex: 'prevent accidents' },
+      { word: 'produce', meaning: '〜を生産する、生み出す', cat: '動詞', ex: 'produce vegetables' },
+      { word: 'protect', meaning: '〜を保護する、守る', cat: '動詞', ex: 'protect the environment' },
+      { word: 'provide', meaning: '〜を提供する、供給する', cat: '動詞', ex: 'provide food and water' },
+      { word: 'reach', meaning: '〜に到着する、手が届く', cat: '動詞', ex: 'reach the top' },
+      { word: 'realize', meaning: '〜をはっきり理解する、実現する', cat: '動詞', ex: 'realize my dream' },
+      { word: 'receive', meaning: '〜を受け取る', cat: '動詞', ex: 'receive a letter' },
+      { word: 'recognize', meaning: '〜を見分ける、認める', cat: '動詞', ex: 'recognize his voice' },
+      { word: 'recycle', meaning: '〜を再利用する', cat: '動詞', ex: 'recycle plastic bottles' },
+      { word: 'reduce', meaning: '〜を減らす', cat: '動詞', ex: 'reduce waste' },
+      { word: 'remind', meaning: '〜に思い出させる', cat: '動詞', ex: 'remind me of home' },
+      { word: 'require', meaning: '〜を必要とする', cat: '動詞', ex: 'require more time' },
+      { word: 'save', meaning: '〜を救う、節約する', cat: '動詞', ex: 'save energy' },
+      { word: 'share', meaning: '〜を共有する、分け合う', cat: '動詞', ex: 'share ideas' },
+      { word: 'succeed', meaning: '成功する', cat: '動詞', ex: 'succeed in business' },
+      { word: 'suggest', meaning: '〜を提案する、示す', cat: '動詞', ex: 'suggest a new plan' },
+      { word: 'survive', meaning: '生き残る', cat: '動詞', ex: 'survive the winter' },
+      { word: 'waste', meaning: '〜を浪費する、無駄にする', cat: '動詞', ex: 'waste money' },
+      { word: 'worry', meaning: '心配する', cat: '動詞', ex: "Don't worry." },
+
+      { word: 'activity', meaning: '活動', cat: '名詞', ex: 'club activities' },
+      { word: 'advantage', meaning: '利点、強み', cat: '名詞', ex: 'take advantage of' },
+      { word: 'amount', meaning: '量、総額', cat: '名詞', ex: 'a large amount of' },
+      { word: 'attitude', meaning: '態度、姿勢', cat: '名詞', ex: 'positive attitude' },
+      { word: 'chance', meaning: '機会、チャンス', cat: '名詞', ex: 'a chance to speak' },
+      { word: 'community', meaning: '地域社会、共同体', cat: '名詞', ex: 'local community' },
+      { word: 'crowd', meaning: '群衆、人混み', cat: '名詞', ex: 'a big crowd' },
+      { word: 'custom', meaning: '習慣、風習', cat: '名詞', ex: 'Japanese custom' },
+      { word: 'danger', meaning: '危険', cat: '名詞', ex: 'in danger' },
+      { word: 'difference', meaning: '違い、相違点', cat: '名詞', ex: 'cultural difference' },
+      { word: 'disaster', meaning: '災害', cat: '名詞', ex: 'natural disaster' },
+      { word: 'education', meaning: '教育', cat: '名詞', ex: 'high quality education' },
+      { word: 'electricity', meaning: '電気', cat: '名詞', ex: 'save electricity' },
+      { word: 'environment', meaning: '（自然）環境', cat: '名詞', ex: 'save the environment' },
+      { word: 'event', meaning: '出来事、行事', cat: '名詞', ex: 'school event' },
+      { word: 'experience', meaning: '経験、体験', cat: '名詞', ex: 'valuable experience' },
+      { word: 'fact', meaning: '事実、現実', cat: '名詞', ex: 'in fact' },
+      { word: 'future', meaning: '未来、将来', cat: '名詞', ex: 'in the near future' },
+      { word: 'government', meaning: '政府', cat: '名詞', ex: 'the local government' },
+      { word: 'habit', meaning: '（個人の）習慣、癖', cat: '名詞', ex: 'good habit' },
+      { word: 'health', meaning: '健康', cat: '名詞', ex: 'good for health' },
+      { word: 'history', meaning: '歴史', cat: '名詞', ex: 'Japanese history' },
+      { word: 'information', meaning: '情報', cat: '名詞', ex: 'get useful information' },
+      { word: 'issue', meaning: '問題、論点', cat: '名詞', ex: 'social issue' },
+      { word: 'knowledge', meaning: '知識', cat: '名詞', ex: 'gain knowledge' },
+      { word: 'matter', meaning: '問題、事柄', cat: '名詞', ex: "It doesn't matter." },
+      { word: 'meaning', meaning: '意味', cat: '名詞', ex: 'meaning of words' },
+      { word: 'nature', meaning: '自然、性質', cat: '名詞', ex: 'enjoy nature' },
+      { word: 'opinion', meaning: '意見、見解', cat: '名詞', ex: 'in my opinion' },
+      { word: 'patient', meaning: '患者', cat: '名詞', ex: 'hospital patient' },
+      { word: 'pollution', meaning: '汚染、公害', cat: '名詞', ex: 'air pollution' },
+      { word: 'population', meaning: '人口', cat: '名詞', ex: 'world population' },
+      { word: 'problem', meaning: '問題', cat: '名詞', ex: 'solve a problem' },
+      { word: 'purpose', meaning: '目的', cat: '名詞', ex: 'for the purpose of' },
+      { word: 'reason', meaning: '理由', cat: '名詞', ex: 'the reason why' },
+      { word: 'relationship', meaning: '関係、結びつき', cat: '名詞', ex: 'good relationship' },
+      { word: 'resource', meaning: '資源', cat: '名詞', ex: 'natural resources' },
+      { word: 'result', meaning: '結果', cat: '名詞', ex: 'as a result' },
+      { word: 'society', meaning: '社会', cat: '名詞', ex: 'modern society' },
+      { word: 'solution', meaning: '解決策、解答', cat: '名詞', ex: 'find a solution' },
+      { word: 'technology', meaning: '科学技術', cat: '名詞', ex: 'modern technology' },
+      { word: 'tradition', meaning: '伝統', cat: '名詞', ex: 'follow tradition' },
+      { word: 'volunteer', meaning: 'ボランティア、志願者', cat: '名詞', ex: 'volunteer activities' },
+
+      { word: 'abroad', meaning: '外国へ、海外で', cat: '副詞', ex: 'travel abroad' },
+      { word: 'accurate', meaning: '正確な', cat: '形容詞', ex: 'accurate data' },
+      { word: 'already', meaning: 'すでに、もう', cat: '副詞', ex: 'already finished' },
+      { word: 'ancient', meaning: '古代の', cat: '形容詞', ex: 'ancient history' },
+      { word: 'careful', meaning: '注意深い、慎重な', cat: '形容詞', ex: 'Be careful.' },
+      { word: 'common', meaning: '共通の、よくある', cat: '形容詞', ex: 'common sense' },
+      { word: 'confident', meaning: '確信して、自信がある', cat: '形容詞', ex: 'confident in speaking' },
+      { word: 'convenient', meaning: '便利な、都合のよい', cat: '形容詞', ex: 'convenient store' },
+      { word: 'correct', meaning: '正しい', cat: '形容詞', ex: 'correct answer' },
+      { word: 'crowded', meaning: '混雑した', cat: '形容詞', ex: 'crowded train' },
+      { word: 'dangerous', meaning: '危険な', cat: '形容詞', ex: 'dangerous place' },
+      { word: 'delicious', meaning: 'とてもおいしい', cat: '形容詞', ex: 'delicious dish' },
+      { word: 'difficult', meaning: '難しい、困難な', cat: '形容詞', ex: 'difficult question' },
+      { word: 'different', meaning: '異なった、違った', cat: '形容詞', ex: 'different ideas' },
+      { word: 'enough', meaning: '十分な、十分に', cat: '形容詞', ex: 'enough time' },
+      { word: 'equal', meaning: '等しい、平等の', cat: '形容詞', ex: 'equal rights' },
+      { word: 'famous', meaning: '有名な', cat: '形容詞', ex: 'famous for sushi' },
+      { word: 'foreign', meaning: '外国の', cat: '形容詞', ex: 'foreign countries' },
+      { word: 'healthy', meaning: '健康的な', cat: '形容詞', ex: 'healthy lifestyle' },
+      { word: 'important', meaning: '重要な、大切な', cat: '形容詞', ex: 'important point' },
+      { word: 'impossible', meaning: '不可能な', cat: '形容詞', ex: 'almost impossible' },
+      { word: 'international', meaning: '国際的な', cat: '形容詞', ex: 'international airport' },
+      { word: 'local', meaning: '地元の、地域の', cat: '形容詞', ex: 'local food' },
+      { word: 'modern', meaning: '現代の、近代の', cat: '形容詞', ex: 'modern art' },
+      { word: 'natural', meaning: '自然の、当然の', cat: '形容詞', ex: 'natural world' },
+      { word: 'necessary', meaning: '必要な', cat: '形容詞', ex: 'necessary tools' },
+      { word: 'peaceful', meaning: '平和な、穏やかな', cat: '形容詞', ex: 'peaceful life' },
+      { word: 'popular', meaning: '人気のある', cat: '形容詞', ex: 'popular singer' },
+      { word: 'possible', meaning: '可能な', cat: '形容詞', ex: 'as soon as possible' },
+      { word: 'recently', meaning: '最近', cat: '副詞', ex: 'until recently' },
+      { word: 'scientific', meaning: '科学的な', cat: '形容詞', ex: 'scientific research' },
+      { word: 'serious', meaning: '深刻な、真剣な', cat: '形容詞', ex: 'serious problem' },
+      { word: 'several', meaning: 'いくつかの', cat: '形容詞', ex: 'several times' },
+      { word: 'traditional', meaning: '伝統的な', cat: '形容詞', ex: 'traditional culture' },
+      { word: 'useful', meaning: '役に立つ', cat: '形容詞', ex: 'useful tools' },
+      { word: 'valuable', meaning: '貴重な、価値のある', cat: '形容詞', ex: 'valuable advice' }
+    ];
+
+    const DEFAULT_WORDS = RAW_VOCAB.map((item, index) => ({
+      id: 'w_' + (index + 1),
+      word: item.word,
+      meaning: item.meaning,
+      category: item.cat,
+      grade: '最頻出',
+      example: item.ex,
+      phonetic: '',
+      knownCount: 0,
+      streak: 0,
+      isWeak: false
+    }));
+
+    // キャッシュ衝突を防ぐためキー名を更新
+    const STORAGE_KEY = 'highschool_exam_words_v2';
+    const SETTINGS_KEY = 'highschool_exam_settings_v2';
+
+    let words = [];
+    let activeDeck = [];
+    let currentIndex = 0;
+    let isFlipped = false;
+    let currentFilter = 'all';
+    let sessionStats = { known: 0, unsure: 0 };
+    let appSettings = {
+      isAudioEnabled: true,
+      isAutoSpeedMode: false,
+      targetDate: null,
+      reviewsToday: 0,
+      lastReviewDate: null
+    };
+
+    let autoAdvanceTimer = null;
+
+    function init() {
+      loadData();
+      checkDateTarget();
+      applyFilter(currentFilter);
+      setupSwipeEvents();
+      setupEventListeners();
+      renderDashboard();
+    }
+
+    function loadData() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          words = JSON.parse(saved);
+        } catch(e) {
+          words = [...DEFAULT_WORDS];
+        }
+      } else {
+        words = [...DEFAULT_WORDS];
+        saveData();
+      }
+
+      const savedSettings = localStorage.getItem(SETTINGS_KEY);
+      if (savedSettings) {
+        try {
+          appSettings = { ...appSettings, ...JSON.parse(savedSettings) };
+        } catch(e) {}
+      }
+
+      const todayStr = new Date().toDateString();
+      if (appSettings.lastReviewDate !== todayStr) {
+        appSettings.reviewsToday = 0;
+        appSettings.lastReviewDate = todayStr;
+        saveSettings();
+      }
+
+      updateAudioButtonUI();
+      updateSpeedModeUI();
+    }
+
+    function saveData() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(words));
+    }
+
+    function saveSettings() {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(appSettings));
+    }
+
+    function checkDateTarget() {
+      if (!appSettings.targetDate) {
+        const d = new Date();
+        d.setDate(d.getDate() + 30);
+        appSettings.targetDate = d.toISOString().split('T')[0];
+        saveSettings();
+      }
+      updateCountdownDisplay();
+    }
+
+    function updateCountdownDisplay() {
+      const target = new Date(appSettings.targetDate);
+      const now = new Date();
+      const diffTime = target - now;
+      const diffDays = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+
+      document.getElementById('countdownBadge').textContent = `残り${diffDays}日`;
+      document.getElementById('dashDaysLeft').textContent = diffDays;
+      document.getElementById('targetDateDisplay').textContent = `${appSettings.targetDate} 終了目標`;
+      
+      const passed = Math.min(30, Math.max(1, 30 - diffDays));
+      const pct = Math.min(100, Math.round((passed / 30) * 100));
+      document.getElementById('dashDaysProgressBar').style.width = `${pct}%`;
+    }
+
+    function applyFilter(filter) {
+      currentFilter = filter;
+      switch(filter) {
+        case 'weak':
+          activeDeck = words.filter(w => w.isWeak);
+          document.getElementById('filterLabel').textContent = `要復習 (${activeDeck.length}語)`;
+          break;
+        case 'verb':
+          activeDeck = words.filter(w => w.category === '動詞');
+          document.getElementById('filterLabel').textContent = `動詞 (${activeDeck.length}語)`;
+          break;
+        case 'noun':
+          activeDeck = words.filter(w => w.category === '名詞');
+          document.getElementById('filterLabel').textContent = `名詞 (${activeDeck.length}語)`;
+          break;
+        case 'adj_adv':
+          activeDeck = words.filter(w => w.category === '形容詞' || w.category === '副詞');
+          document.getElementById('filterLabel').textContent = `形容詞/副詞 (${activeDeck.length}語)`;
+          break;
+        default:
+          activeDeck = [...words];
+          document.getElementById('filterLabel').textContent = `すべて (${activeDeck.length}語)`;
+          break;
+      }
+
+      currentIndex = 0;
+      sessionStats = { known: 0, unsure: 0 };
+      updateSessionStatsUI();
+      renderCurrentCard();
+      updateFilterCountsModal();
+    }
+
+    function updateFilterCountsModal() {
+      document.getElementById('filterCountAll').textContent = `${words.length}語`;
+      document.getElementById('filterCountWeak').textContent = `${words.filter(w => w.isWeak).length}語`;
+      document.getElementById('filterCountVerb').textContent = `${words.filter(w => w.category === '動詞').length}語`;
+      document.getElementById('filterCountNoun').textContent = `${words.filter(w => w.category === '名詞').length}語`;
+      document.getElementById('filterCountAdj').textContent = `${words.filter(w => w.category === '形容詞' || w.category === '副詞').length}語`;
+    }
+
+    function renderCurrentCard() {
+      clearTimeout(autoAdvanceTimer);
+      const card = document.getElementById('flashCard');
+      card.style.transform = '';
+      card.style.opacity = '1';
+
+      if (activeDeck.length === 0) {
+        document.getElementById('cardWord').textContent = '周回完了！';
+        document.getElementById('cardPhonetic').textContent = 'Perfect!';
+        document.getElementById('meaningPlaceholder').classList.add('hidden');
+        document.getElementById('meaningContent').classList.remove('hidden');
+        document.getElementById('cardMeaning').textContent = '周回対象の単語がありません';
+        document.getElementById('cardExample').textContent = 'フィルターを変更するか、単語を追加してください。';
+        document.getElementById('cardGrade').textContent = '-';
+        document.getElementById('cardCategory').textContent = '-';
+        document.getElementById('weakBadge').classList.add('hidden');
+        document.getElementById('cardProgressText').textContent = '0 / 0';
+        return;
+      }
+
+      const item = activeDeck[currentIndex];
+      document.getElementById('cardWord').textContent = item.word;
+      document.getElementById('cardPhonetic').textContent = item.phonetic || '';
+      document.getElementById('cardGrade').textContent = item.grade || '最頻出';
+      document.getElementById('cardCategory').textContent = item.category || '重要語';
+      document.getElementById('cardMeaning').textContent = item.meaning;
+      document.getElementById('cardExample').textContent = item.example || '';
+      document.getElementById('cardProgressText').textContent = `${currentIndex + 1} / ${activeDeck.length}`;
+
+      if (item.isWeak) {
+        document.getElementById('weakBadge').classList.remove('hidden');
+      } else {
+        document.getElementById('weakBadge').classList.add('hidden');
+      }
+
+      isFlipped = false;
+      document.getElementById('meaningPlaceholder').classList.remove('hidden');
+      document.getElementById('meaningContent').classList.add('hidden');
+
+      if (appSettings.isAudioEnabled) {
+        speakWord(item.word);
+      }
+
+      if (appSettings.isAutoSpeedMode) {
+        autoAdvanceTimer = setTimeout(() => {
+          flipCard(true);
+        }, 850);
+      }
+    }
+
+    function flipCard(forceShow = false) {
+      if (activeDeck.length === 0) return;
+      isFlipped = forceShow ? true : !isFlipped;
+
+      if (isFlipped) {
+        document.getElementById('meaningPlaceholder').classList.add('hidden');
+        document.getElementById('meaningContent').classList.remove('hidden');
+      } else {
+        document.getElementById('meaningPlaceholder').classList.remove('hidden');
+        document.getElementById('meaningContent').classList.add('hidden');
+      }
+    }
+
+    function speakWord(text) {
+      if (!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-US';
+      utterance.rate = 0.95;
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function handleDecision(isKnown) {
+      if (activeDeck.length === 0) return;
+      clearTimeout(autoAdvanceTimer);
+
+      const item = activeDeck[currentIndex];
+      const origWord = words.find(w => w.id === item.id) || item;
+
+      if (isKnown) {
+        sessionStats.known++;
+        origWord.knownCount = (origWord.knownCount || 0) + 1;
+        origWord.streak = (origWord.streak || 0) + 1;
+        if (origWord.streak >= 2) {
+          origWord.isWeak = false;
+        }
+      } else {
+        sessionStats.unsure++;
+        origWord.isWeak = true;
+        origWord.streak = 0;
+      }
+
+      appSettings.reviewsToday++;
+      saveData();
+      saveSettings();
+      updateSessionStatsUI();
+
+      const card = document.getElementById('flashCard');
+      card.classList.add(isKnown ? 'animate-swipe-right' : 'animate-swipe-left');
+
+      setTimeout(() => {
+        card.classList.remove('animate-swipe-right', 'animate-swipe-left');
+        nextCard();
+      }, 250);
+    }
+
+    function nextCard() {
+      currentIndex++;
+      if (currentIndex >= activeDeck.length) {
+        triggerCompletionConfetti();
+        showToast('1周完了！よく頑張りました 🎉');
+        applyFilter(currentFilter);
+        return;
+      }
+      renderCurrentCard();
+      renderDashboard();
+    }
+
+    function updateSessionStatsUI() {
+      document.getElementById('sessionKnownCount').textContent = sessionStats.known;
+      document.getElementById('sessionUnsureCount').textContent = sessionStats.unsure;
+    }
+
+    function triggerCompletionConfetti() {
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 50,
+          spread: 60,
+          origin: { y: 0.7 }
+        });
+      }
+    }
+
+    function setupSwipeEvents() {
+      const card = document.getElementById('flashCard');
+      let startX = 0, currentX = 0;
+      let isDragging = false;
+      const leftInd = document.getElementById('leftIndicator');
+      const rightInd = document.getElementById('rightIndicator');
+
+      card.addEventListener('touchstart', (e) => {
+        if (activeDeck.length === 0) return;
+        startX = e.touches[0].clientX;
+        isDragging = true;
+      }, { passive: true });
+
+      card.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        currentX = e.touches[0].clientX - startX;
+
+        if (Math.abs(currentX) > 10) {
+          const rotation = currentX * 0.08;
+          card.style.transform = `translateX(${currentX}px) rotate(${rotation}deg)`;
+
+          if (currentX > 30) {
+            rightInd.style.opacity = Math.min(0.85, (currentX - 30) / 100);
+            leftInd.style.opacity = 0;
+          } else if (currentX < -30) {
+            leftInd.style.opacity = Math.min(0.85, (-currentX - 30) / 100);
+            rightInd.style.opacity = 0;
+          } else {
+            leftInd.style.opacity = 0;
+            rightInd.style.opacity = 0;
+          }
+        }
+      }, { passive: true });
+
+      const onTouchEnd = () => {
+        if (!isDragging) return;
+        isDragging = false;
+        leftInd.style.opacity = 0;
+        rightInd.style.opacity = 0;
+
+        const threshold = 85;
+        if (currentX > threshold) {
+          handleDecision(true);
+        } else if (currentX < -threshold) {
+          handleDecision(false);
+        } else {
+          card.style.transform = 'translateX(0px) rotate(0deg)';
+        }
+        currentX = 0;
+      };
+
+      card.addEventListener('touchend', onTouchEnd);
+      card.addEventListener('touchcancel', onTouchEnd);
+
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('#cardSpeakBtn')) return;
+        flipCard();
+      });
+    }
+
+    function setupEventListeners() {
+      document.getElementById('btnRemembered').addEventListener('click', () => handleDecision(true));
+      document.getElementById('btnNotYet').addEventListener('click', () => handleDecision(false));
+      document.getElementById('cardSpeakBtn').addEventListener('click', () => {
+        if (activeDeck[currentIndex]) speakWord(activeDeck[currentIndex].word);
+      });
+
+      document.getElementById('toggleAudioBtn').addEventListener('click', () => {
+        appSettings.isAudioEnabled = !appSettings.isAudioEnabled;
+        saveSettings();
+        updateAudioButtonUI();
+        showToast(appSettings.isAudioEnabled ? '音声: ON' : '音声: OFF');
+      });
+
+      document.getElementById('toggleAutoNextBtn').addEventListener('click', () => {
+        appSettings.isAutoSpeedMode = !appSettings.isAutoSpeedMode;
+        saveSettings();
+        updateSpeedModeUI();
+        showToast(appSettings.isAutoSpeedMode ? '速読モード ON' : '速読モード OFF');
+        renderCurrentCard();
+      });
+
+      document.getElementById('tabCard').addEventListener('click', () => switchTab('card'));
+      document.getElementById('tabDash').addEventListener('click', () => switchTab('dash'));
+      document.getElementById('tabList').addEventListener('click', () => switchTab('list'));
+
+      document.getElementById('filterModeBadge').addEventListener('click', () => {
+        updateFilterCountsModal();
+        document.getElementById('filterModal').classList.remove('hidden');
+      });
+      document.getElementById('closeFilterModal').addEventListener('click', () => {
+        document.getElementById('filterModal').classList.add('hidden');
+      });
+      document.querySelectorAll('.filter-opt-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const filter = e.currentTarget.getAttribute('data-filter');
+          applyFilter(filter);
+          document.getElementById('filterModal').classList.add('hidden');
+        });
+      });
+
+      document.getElementById('btnLaunchWeakStudy').addEventListener('click', () => {
+        applyFilter('weak');
+        switchTab('card');
+      });
+
+      document.getElementById('btnSetTargetDate').addEventListener('click', () => {
+        document.getElementById('targetDateInput').value = appSettings.targetDate;
+        document.getElementById('dateModal').classList.remove('hidden');
+      });
+      document.getElementById('closeDateModal').addEventListener('click', () => {
+        document.getElementById('dateModal').classList.add('hidden');
+      });
+      document.getElementById('saveDateModal').addEventListener('click', () => {
+        const val = document.getElementById('targetDateInput').value;
+        if (val) {
+          appSettings.targetDate = val;
+          saveSettings();
+          updateCountdownDisplay();
+          document.getElementById('dateModal').classList.add('hidden');
+          showToast('目標期限を更新しました');
+        }
+      });
+
+      document.getElementById('btnOpenAddModal').addEventListener('click', () => {
+        document.getElementById('addModal').classList.remove('hidden');
+      });
+      document.getElementById('closeAddModal').addEventListener('click', () => {
+        document.getElementById('addModal').classList.add('hidden');
+      });
+      document.getElementById('tabAddSingle').addEventListener('click', () => {
+        document.getElementById('formAddSingle').classList.remove('hidden');
+        document.getElementById('formAddBatch').classList.add('hidden');
+        document.getElementById('tabAddSingle').className = 'flex-1 py-1.5 rounded-lg bg-slate-700 text-white font-semibold';
+        document.getElementById('tabAddBatch').className = 'flex-1 py-1.5 rounded-lg text-slate-400 font-semibold hover:text-white';
+      });
+      document.getElementById('tabAddBatch').addEventListener('click', () => {
+        document.getElementById('formAddSingle').classList.add('hidden');
+        document.getElementById('formAddBatch').classList.remove('hidden');
+        document.getElementById('tabAddBatch').className = 'flex-1 py-1.5 rounded-lg bg-slate-700 text-white font-semibold';
+        document.getElementById('tabAddSingle').className = 'flex-1 py-1.5 rounded-lg text-slate-400 font-semibold hover:text-white';
+      });
+
+      document.getElementById('btnSaveSingleWord').addEventListener('click', () => {
+        const word = document.getElementById('newWord').value.trim();
+        const meaning = document.getElementById('newMeaning').value.trim();
+        const grade = document.getElementById('newGrade').value;
+        const category = document.getElementById('newCategory').value;
+        const example = document.getElementById('newExample').value.trim();
+
+        if (!word || !meaning) {
+          showToast('単語と意味を入力してください');
+          return;
+        }
+
+        const newEntry = {
+          id: 'custom_' + Date.now(),
+          word,
+          meaning,
+          grade,
+          category,
+          example: example || `${word}`,
+          phonetic: '',
+          knownCount: 0,
+          streak: 0,
+          isWeak: true
+        };
+
+        words.unshift(newEntry);
+        saveData();
+        applyFilter(currentFilter);
+        renderWordList();
+        renderDashboard();
+
+        document.getElementById('newWord').value = '';
+        document.getElementById('newMeaning').value = '';
+        document.getElementById('newExample').value = '';
+        document.getElementById('addModal').classList.add('hidden');
+        showToast(`「${word}」を追加しました`);
+      });
+
+      document.getElementById('btnSaveBatchWords').addEventListener('click', () => {
+        const raw = document.getElementById('batchInput').value.trim();
+        if (!raw) return;
+
+        const lines = raw.split('\n');
+        let addedCount = 0;
+
+        lines.forEach(line => {
+          if (!line.trim()) return;
+          const parts = line.split(/[,|\t]/);
+          if (parts.length >= 2) {
+            const w = parts[0].trim();
+            const m = parts[1].trim();
+            if (w && m) {
+              words.unshift({
+                id: 'batch_' + Date.now() + Math.random(),
+                word: w,
+                meaning: m,
+                grade: '頻出',
+                category: '重要語',
+                example: '',
+                phonetic: '',
+                knownCount: 0,
+                streak: 0,
+                isWeak: true
+              });
+              addedCount++;
+            }
+          }
+        });
+
+        if (addedCount > 0) {
+          saveData();
+          applyFilter(currentFilter);
+          renderWordList();
+          renderDashboard();
+          document.getElementById('batchInput').value = '';
+          document.getElementById('addModal').classList.add('hidden');
+          showToast(`${addedCount}語を一括インポートしました`);
+        } else {
+          showToast('形式（単語, 意味）が正しくありません');
+        }
+      });
+
+      document.getElementById('searchInput').addEventListener('input', (e) => {
+        renderWordList(e.target.value.trim());
+      });
+    }
+
+    function switchTab(tabName) {
+      const views = {
+        card: document.getElementById('viewCard'),
+        dash: document.getElementById('viewDashboard'),
+        list: document.getElementById('viewList')
+      };
+      const tabs = {
+        card: document.getElementById('tabCard'),
+        dash: document.getElementById('tabDash'),
+        list: document.getElementById('tabList')
+      };
+
+      Object.keys(views).forEach(key => {
+        if (key === tabName) {
+          views[key].classList.remove('hidden');
+          tabs[key].className = 'tab-btn flex flex-col items-center gap-1 text-brand-400 transition';
+        } else {
+          views[key].classList.add('hidden');
+          tabs[key].className = 'tab-btn flex flex-col items-center gap-1 text-slate-400 hover:text-slate-200 transition';
+        }
+      });
+
+      if (tabName === 'dash') renderDashboard();
+      if (tabName === 'list') renderWordList();
+      if (tabName === 'card') renderCurrentCard();
+    }
+
+    function updateAudioButtonUI() {
+      const icon = document.getElementById('audioIcon');
+      if (appSettings.isAudioEnabled) {
+        icon.className = 'ph-bold ph-speaker-high text-lg text-brand-400';
+      } else {
+        icon.className = 'ph-bold ph-speaker-slash text-lg text-slate-500';
+      }
+    }
+
+    function updateSpeedModeUI() {
+      const label = document.getElementById('speedModeLabel');
+      if (appSettings.isAutoSpeedMode) {
+        label.textContent = '速読ON';
+        label.className = 'text-[10px] text-amber-300 font-bold';
+      } else {
+        label.textContent = '速読OFF';
+        label.className = 'text-[10px] text-slate-400';
+      }
+    }
+
+    function renderDashboard() {
+      const total = words.length;
+      const mastered = words.filter(w => (w.streak || 0) >= 2 && !w.isWeak).length;
+      const weak = words.filter(w => w.isWeak).length;
+      const pct = total > 0 ? Math.round((mastered / total) * 100) : 0;
+
+      document.getElementById('statTotalWords').textContent = total;
+      document.getElementById('statMasteredWords').textContent = mastered;
+      document.getElementById('statMasteredPercent').textContent = `${pct}% 定着`;
+      document.getElementById('statTodayReviews').textContent = appSettings.reviewsToday;
+      document.getElementById('weakCountBadge').textContent = `${weak}語`;
+      updateCountdownDisplay();
+    }
+
+    function renderWordList(searchQuery = '') {
+      const container = document.getElementById('wordListContainer');
+      container.innerHTML = '';
+
+      let list = [...words];
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        list = list.filter(w => w.word.toLowerCase().includes(q) || w.meaning.includes(q));
+      }
+
+      if (list.length === 0) {
+        container.innerHTML = '<div class="text-center py-8 text-xs text-slate-500">該当する単語がありません</div>';
+        return;
+      }
+
+      list.forEach(w => {
+        const item = document.createElement('div');
+        item.className = 'p-3 bg-slate-800/80 border border-slate-700/70 rounded-xl flex items-center justify-between';
+        item.innerHTML = `
+          <div class="flex-1 min-w-0 pr-2">
+            <div class="flex items-center gap-1.5 mb-0.5">
+              <span class="font-bold text-sm text-white font-mono">${w.word}</span>
+              <span class="text-[9px] px-1.5 py-0.2 rounded bg-slate-700 text-slate-300">${w.category || '重要語'}</span>
+              ${w.isWeak ? '<span class="text-[9px] text-rose-400 font-bold bg-rose-500/20 px-1 rounded">要復習</span>' : ''}
+            </div>
+            <div class="text-xs text-amber-300 truncate">${w.meaning}</div>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button class="speak-item-btn p-2 text-slate-400 hover:text-brand-400 active:scale-95 transition" data-word="${w.word}">
+              <i class="ph-bold ph-speaker-high text-base"></i>
+            </button>
+            <button class="delete-item-btn p-2 text-slate-500 hover:text-rose-400 active:scale-95 transition" data-id="${w.id}">
+              <i class="ph-bold ph-trash text-base"></i>
+            </button>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+
+      container.querySelectorAll('.speak-item-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const w = e.currentTarget.getAttribute('data-word');
+          speakWord(w);
+        });
+      });
+
+      // 削除処理の整合性を修正
+      container.querySelectorAll('.delete-item-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const id = e.currentTarget.getAttribute('data-id');
+          words = words.filter(item => item.id !== id);
+          saveData();
+          applyFilter(currentFilter);
+          renderWordList(searchQuery);
+          renderDashboard();
+          showToast('単語を削除しました');
+        });
+      });
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      const text = document.getElementById('toastMsg');
+      text.textContent = msg;
+      toast.classList.remove('opacity-0', '-translate-y-2');
+      toast.classList.add('opacity-100', 'translate-y-0');
+
+      setTimeout(() => {
+        toast.classList.remove('opacity-100', 'translate-y-0');
+        toast.classList.add('opacity-0', '-translate-y-2');
+      }, 2000);
+    }
+
+    window.onload = function() {
+      init();
+    };
+  </script>
+</body>
+</html>
